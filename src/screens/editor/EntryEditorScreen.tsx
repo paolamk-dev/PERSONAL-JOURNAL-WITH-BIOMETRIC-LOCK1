@@ -20,6 +20,7 @@ import { calculateWordCount } from '../../utils/validationUtils';
 import { spacing, borderRadius } from '../../constants/layout';
 import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase/firestore';
+import { RichTextEditor } from '../../components/RichTextEditor';
 
 export const EntryEditorScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -34,7 +35,13 @@ export const EntryEditorScreen: React.FC = () => {
   const [fetching, setFetching] = useState(false);
 
   const isEditing = !!params?.entryId;
-  const wordCount = calculateWordCount(body);
+
+  // Helper to strip HTML tags for word count
+  const stripHtml = (html: string): string => {
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  };
+
+  const wordCount = calculateWordCount(stripHtml(body));
 
   useEffect(() => {
     if (isEditing && params.entryId) {
@@ -73,7 +80,8 @@ export const EntryEditorScreen: React.FC = () => {
       return;
     }
 
-    if (!body.trim()) {
+    const plainTextBody = stripHtml(body);
+    if (!plainTextBody.trim()) {
       Alert.alert('Validation Error', 'Please enter some content');
       return;
     }
@@ -108,7 +116,8 @@ export const EntryEditorScreen: React.FC = () => {
   };
 
   const handleCancel = () => {
-    if (title.trim() || body.trim()) {
+    const plainTextBody = stripHtml(body);
+    if (title.trim() || plainTextBody.trim()) {
       Alert.alert(
         'Discard Changes?',
         'You have unsaved changes. Are you sure you want to discard them?',
@@ -156,11 +165,8 @@ export const EntryEditorScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Title Input */}
+      {/* Title Input */}
+      <View style={[styles.titleContainer, { borderBottomColor: theme.border }]}>
         <TextInput
           style={[styles.titleInput, { color: theme.text }]}
           placeholder="Give your entry a title..."
@@ -170,19 +176,14 @@ export const EntryEditorScreen: React.FC = () => {
           editable={!loading}
           autoFocus={!isEditing}
         />
+      </View>
 
-        {/* Body Input */}
-        <TextInput
-          style={[styles.bodyInput, { color: theme.text }]}
-          placeholder="Start writing..."
-          placeholderTextColor={theme.textSecondary}
-          value={body}
-          onChangeText={setBody}
-          multiline
-          textAlignVertical="top"
-          editable={!loading}
-        />
-      </ScrollView>
+      {/* Rich Text Editor */}
+      <RichTextEditor
+        initialContent={body}
+        placeholder="Start writing..."
+        onContentChange={setBody}
+      />
 
       {/* Footer */}
       <View style={[styles.footer, { borderTopColor: theme.border }]}>
@@ -220,19 +221,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  content: {
-    flex: 1,
+  titleContainer: {
     paddingHorizontal: spacing.lg,
+    borderBottomWidth: 1,
   },
   titleInput: {
     fontSize: 24,
     fontWeight: 'bold',
-    paddingVertical: spacing.lg,
-  },
-  bodyInput: {
-    fontSize: 16,
-    lineHeight: 24,
-    minHeight: 400,
+    paddingVertical: spacing.md,
   },
   footer: {
     flexDirection: 'row',

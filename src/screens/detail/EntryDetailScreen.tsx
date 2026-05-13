@@ -18,6 +18,7 @@ import { JournalEntry } from '../../types/entry.types';
 import { formatEntryDate } from '../../utils/dateUtils';
 import { spacing, borderRadius } from '../../constants/layout';
 import { HomeStackParamList } from '../../types/navigation.types';
+import { RichTextViewer } from '../../components/RichTextViewer';
 
 type EntryDetailScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'EntryDetail'>;
 type EntryDetailScreenRouteProp = RouteProp<HomeStackParamList, 'EntryDetail'>;
@@ -137,45 +138,34 @@ export const EntryDetailScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView style={styles.content}>
-        {/* Metadata */}
-        <View style={styles.metadata}>
-          <Text style={[styles.date, { color: theme.textSecondary }]}>
-            {formatEntryDate(entry.createdAt.toDate())}
+      {/* Metadata Header */}
+      <View style={[styles.metadataHeader, { borderBottomColor: theme.border }]}>
+        <Text style={[styles.date, { color: theme.textSecondary }]}>
+          {formatEntryDate(entry.createdAt.toDate())}
+        </Text>
+        <View style={styles.metadataRow}>
+          {entry.isFavorite && (
+            <View style={styles.badge}>
+              <Ionicons name="star" size={14} color={theme.accent} />
+              <Text style={[styles.badgeText, { color: theme.accent }]}>Favorite</Text>
+            </View>
+          )}
+          <Text style={[styles.readingTime, { color: theme.textSecondary }]}>
+            {readingTime} min read · {entry.wordCount} words
           </Text>
-          <View style={styles.metadataRow}>
-            {entry.isFavorite && (
-              <View style={styles.badge}>
-                <Ionicons name="star" size={14} color={theme.accent} />
-                <Text style={[styles.badgeText, { color: theme.accent }]}>Favorite</Text>
-              </View>
-            )}
-            <Text style={[styles.readingTime, { color: theme.textSecondary }]}>
-              {readingTime} min read
-            </Text>
-          </View>
         </View>
+      </View>
 
-        {/* Mood */}
+      {/* Title and Mood */}
+      <View style={styles.titleSection}>
         {moodEmoji && (
-          <View style={styles.moodContainer}>
-            <Text style={styles.moodEmoji}>{moodEmoji}</Text>
-          </View>
+          <Text style={styles.moodEmoji}>{moodEmoji}</Text>
         )}
-
-        {/* Title */}
         <Text style={[styles.title, { color: theme.text }]}>{entry.title}</Text>
+      </View>
 
-        {/* Body */}
-        <Text style={[styles.body, { color: theme.text }]}>{entry.body}</Text>
-
-        {/* Word Count */}
-        <View style={styles.footer}>
-          <Text style={[styles.wordCount, { color: theme.textSecondary }]}>
-            {entry.wordCount} words
-          </Text>
-        </View>
-      </ScrollView>
+      {/* Rich Text Body */}
+      <RichTextViewer content={entry.body} />
     </View>
   );
 };
@@ -208,13 +198,10 @@ const styles = StyleSheet.create({
   headerAction: {
     padding: spacing.xs,
   },
-  content: {
-    flex: 1,
+  metadataHeader: {
     paddingHorizontal: spacing.lg,
-  },
-  metadata: {
-    paddingTop: spacing.lg,
-    marginBottom: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
   },
   date: {
     fontSize: 14,
@@ -237,28 +224,17 @@ const styles = StyleSheet.create({
   readingTime: {
     fontSize: 12,
   },
-  moodContainer: {
-    marginBottom: spacing.md,
+  titleSection: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
   moodEmoji: {
     fontSize: 48,
+    marginBottom: spacing.sm,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: spacing.lg,
     lineHeight: 36,
-  },
-  body: {
-    fontSize: 16,
-    lineHeight: 26,
-    marginBottom: spacing.xl,
-  },
-  footer: {
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-  },
-  wordCount: {
-    fontSize: 12,
   },
 });

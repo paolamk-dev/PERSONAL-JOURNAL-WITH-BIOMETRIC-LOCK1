@@ -34,12 +34,16 @@ export const HomeScreen: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
 
+  const stripHtml = (html: string): string => {
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  };
+
   // Filter entries by search query
   const filteredEntries = searchQuery.trim()
     ? entries.filter(
         (entry) =>
           entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          entry.body.toLowerCase().includes(searchQuery.toLowerCase())
+          stripHtml(entry.body).toLowerCase().includes(searchQuery.toLowerCase())
       )
     : entries;
 

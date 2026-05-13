@@ -35,6 +35,10 @@ export const EntryCard: React.FC<EntryCardProps> = ({
     return entry.mood ? moodMap[entry.mood] : null;
   };
 
+  const stripHtml = (html: string): string => {
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  };
+
   const handleLongPress = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -76,7 +80,8 @@ export const EntryCard: React.FC<EntryCardProps> = ({
   };
 
   const moodEmoji = getMoodEmoji();
-  const preview = getPreviewText(entry.body, 100);
+  const plainTextBody = stripHtml(entry.body);
+  const preview = getPreviewText(plainTextBody, 100);
   const photoCount = entry.photos.length;
 
   return (
