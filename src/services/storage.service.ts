@@ -77,3 +77,37 @@ export const getSignedUrl = async (supabasePath: string): Promise<string> => {
     throw new Error('Failed to get signed URL');
   }
 };
+
+/**
+ * Delete multiple images from Supabase Storage
+ * @param supabasePaths - Array of storage paths to delete
+ */
+export const deleteImages = async (supabasePaths: string[]): Promise<void> => {
+  try {
+    if (supabasePaths.length === 0) return;
+
+    const { error } = await supabase.storage
+      .from(SUPABASE_BUCKET_NAME)
+      .remove(supabasePaths);
+
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error deleting images:', error);
+    throw new Error('Failed to delete images');
+  }
+};
+
+/**
+ * Get the public URL for an image
+ * @param supabasePath - The storage path of the image
+ * @returns The public URL of the image
+ */
+export const getPublicUrl = (supabasePath: string): string => {
+  const { data } = supabase.storage
+    .from(SUPABASE_BUCKET_NAME)
+    .getPublicUrl(supabasePath);
+
+  return data.publicUrl;
+};

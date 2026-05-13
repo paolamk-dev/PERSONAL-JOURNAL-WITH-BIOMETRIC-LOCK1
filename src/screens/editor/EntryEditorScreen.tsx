@@ -10,17 +10,21 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../store/settingsStore';
 import { useAuth } from '../../hooks/useAuth';
 import { createEntry, updateEntry, getEntries } from '../../services/entry.service';
+import { uploadImage, deleteImage } from '../../services/storage.service';
 import { calculateWordCount } from '../../utils/validationUtils';
 import { spacing, borderRadius } from '../../constants/layout';
 import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase/firestore';
 import { RichTextEditor } from '../../components/RichTextEditor';
+import { PhotoPicker } from '../../components/PhotoPicker';
+import { DailyPhoto } from '../../types/entry.types';
 
 export const EntryEditorScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -31,10 +35,13 @@ export const EntryEditorScreen: React.FC = () => {
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [photos, setPhotos] = useState<DailyPhoto[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const isEditing = !!params?.entryId;
+  const entryId = params?.entryId || uuidv4();
 
   // Helper to strip HTML tags for word count
   const stripHtml = (html: string): string => {
@@ -60,6 +67,7 @@ export const EntryEditorScreen: React.FC = () => {
       if (entry) {
         setTitle(entry.title);
         setBody(entry.body);
+        setPhotos(entry.photos);
       } else {
         Alert.alert('Error', 'Entry not found');
         navigation.goBack();
@@ -69,6 +77,43 @@ export const EntryEditorScreen: React.FC = () => {
       navigation.goBack();
     } finally {
       setFetching(false);
+    }
+  };
+
+  const handlePhotoPicked = async (uri: string) => {
+    if (!user) return;
+
+    setUploading(true);
+    try {
+      const photoId = uuidv4();
+      const url = await uploadImage(user.uid, entryId, photoId, uri);
+
+      const newPhoto: DailyPhoto = {
+        id: photoId,
+        entryId,
+        supabaseUrl: url,
+        supabasePath: `${user.uid}/${entryId}/${photoId}.jpg`,
+        caption: '',
+        uploadedAt: Timestamp.now(),
+      };
+
+      setPhotos([...photos, newPhoto]);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to upload photo. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    const photo = photos.find((p) => p.id === photoId);
+    if (!photo) return;
+
+    try {
+      await deleteImage(photo.supabasePath);
+      setPhotos(photos.filter((p) => p.id !== photoId));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete photo. Please try again.');
     }
   };
 
@@ -92,17 +137,17 @@ export const EntryEditorScreen: React.FC = () => {
         await updateEntry(user.uid, params.entryId, {
           title: title.trim(),
           body: body.trim(),
+          photos,
           wordCount,
         });
       } else {
-        const entryId = uuidv4();
         await createEntry(user.uid, {
           id: entryId,
           title: title.trim(),
           body: body.trim(),
           mood: null,
           tags: [],
-          photos: [],
+          photos,
           wordCount,
         });
       }
@@ -165,18 +210,54 @@ export const EntryEditorScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Title Input */}
-      <View style={[styles.titleContainer, { borderBottomColor: theme.border }]}>
-        <TextInput
-          style={[styles.titleInput, { color: theme.text }]}
-          placeholder="Give your entry a title..."
-          placeholderTextColor={theme.textSecondary}
-          value={title}
-          onChangeText={setTitle}
-          editable={!loading}
-          autoFocus={!isEditing}
-        />
-      </View>
+      <ScrollView style={styles.scrollContent}>
+        {/* Title Input */}
+        <View style={[styles.titleContainer, { borderBottomColor: theme.border }]}>
+          <TextInput
+            style={[styles.titleInput, { color: theme.text }]}
+            placeholder="Give your entry a title..."
+            placeholderTextColor={theme.textSecondary}
+            value={title}
+            onChangeText={setTitle}
+            editable={!loading}
+            autoFocus={!isEditing}
+          />
+        </View>
+
+        {/* Photos Section */}
+        <View style={styles.photosSection}>
+          <PhotoPicker
+            onPhotoPicked={handlePhotoPicked}
+            currentPhotoCount={photos.length}
+            maxPhotos={10}
+          />
+
+          {uploading && (
+            <View style={styles.uploadingIndicator}>
+              <ActivityIndicator size="small" color={theme.primary} />
+              <Text style={[styles.uploadingText, { color: theme.textSecondary }]}>
+                Uploading photo...
+              </Text>
+            </View>
+          )}
+
+          {photos.length > 0 && (
+            <View style={styles.photoGrid}>
+              {photos.map((photo) => (
+                <View key={photo.id} style={styles.photoItem}>
+                  <Image source={{ uri: photo.supabaseUrl }} style={styles.photoThumbnail} />
+                  <TouchableOpacity
+                    style={[styles.deletePhotoButton, { backgroundColor: theme.danger }]}
+                    onPress={() => handleDeletePhoto(photo.id)}
+                  >
+                    <Ionicons name="close" size={16} color="#ffffff" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
 
       {/* Rich Text Editor */}
       <RichTextEditor
@@ -221,6 +302,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  scrollContent: {
+    maxHeight: 280,
+  },
   titleContainer: {
     paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
@@ -229,6 +313,45 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     paddingVertical: spacing.md,
+  },
+  photosSection: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  uploadingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  uploadingText: {
+    fontSize: 14,
+  },
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    marginTop: spacing.md,
+  },
+  photoItem: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+  },
+  photoThumbnail: {
+    width: '100%',
+    height: '100%',
+    borderRadius: borderRadius.md,
+  },
+  deletePhotoButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   footer: {
     flexDirection: 'row',

@@ -19,6 +19,7 @@ import { formatEntryDate } from '../../utils/dateUtils';
 import { spacing, borderRadius } from '../../constants/layout';
 import { HomeStackParamList } from '../../types/navigation.types';
 import { RichTextViewer } from '../../components/RichTextViewer';
+import { PhotoGallery } from '../../components/PhotoGallery';
 
 type EntryDetailScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'EntryDetail'>;
 type EntryDetailScreenRouteProp = RouteProp<HomeStackParamList, 'EntryDetail'>;
@@ -156,16 +157,27 @@ export const EntryDetailScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Title and Mood */}
-      <View style={styles.titleSection}>
-        {moodEmoji && (
-          <Text style={styles.moodEmoji}>{moodEmoji}</Text>
-        )}
-        <Text style={[styles.title, { color: theme.text }]}>{entry.title}</Text>
-      </View>
+      <ScrollView style={styles.scrollContent}>
+        {/* Title and Mood */}
+        <View style={styles.titleSection}>
+          {moodEmoji && (
+            <Text style={styles.moodEmoji}>{moodEmoji}</Text>
+          )}
+          <Text style={[styles.title, { color: theme.text }]}>{entry.title}</Text>
+        </View>
 
-      {/* Rich Text Body */}
-      <RichTextViewer content={entry.body} />
+        {/* Photo Gallery */}
+        {entry.photos && entry.photos.length > 0 && (
+          <View style={styles.photoGallerySection}>
+            <PhotoGallery photos={entry.photos} editable={false} />
+          </View>
+        )}
+
+        {/* Rich Text Body */}
+        <View style={styles.bodySection}>
+          <RichTextViewer content={entry.body} />
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -224,6 +236,9 @@ const styles = StyleSheet.create({
   readingTime: {
     fontSize: 12,
   },
+  scrollContent: {
+    flex: 1,
+  },
   titleSection: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
@@ -236,5 +251,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     lineHeight: 36,
+  },
+  photoGallerySection: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  bodySection: {
+    flex: 1,
   },
 });
