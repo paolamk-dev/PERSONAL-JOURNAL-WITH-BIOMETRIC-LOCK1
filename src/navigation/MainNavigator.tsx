@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { TabParamList } from '../types/navigation.types';
 import { HomeStackNavigator } from './HomeStackNavigator';
 import { CalendarScreen } from '../screens/calendar/CalendarScreen';
+import { GalleryScreen } from '../screens/gallery/GalleryScreen';
 import { useTheme } from '../store/settingsStore';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -40,6 +41,16 @@ export const MainNavigator: React.FC = () => {
           tabBarLabel: 'Calendar',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Gallery"
+        component={GalleryScreen}
+        options={{
+          tabBarLabel: 'Gallery',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="images" size={size} color={color} />
           ),
         }}
       />
