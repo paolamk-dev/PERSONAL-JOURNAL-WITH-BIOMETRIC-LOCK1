@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from './src/store/authStore';
 import { ThemeProvider } from './src/store/settingsStore';
 import { EntryProvider } from './src/store/entryStore';
+import { LockProvider } from './src/store/lockStore';
 import { RootNavigator } from './src/navigation/RootNavigator';
 
 export default function App() {
@@ -13,10 +14,12 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <EntryProvider>
-              <StatusBar style="auto" />
-              <RootNavigator />
-            </EntryProvider>
+            <LockProvider>
+              <EntryProvider>
+                <StatusBar style="auto" />
+                <RootNavigator />
+              </EntryProvider>
+            </LockProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
