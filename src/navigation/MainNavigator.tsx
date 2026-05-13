@@ -5,6 +5,7 @@ import { TabParamList } from '../types/navigation.types';
 import { HomeStackNavigator } from './HomeStackNavigator';
 import { CalendarScreen } from '../screens/calendar/CalendarScreen';
 import { GalleryScreen } from '../screens/gallery/GalleryScreen';
+import { SettingsScreen } from '../screens/settings/SettingsScreen';
 import { useTheme } from '../store/settingsStore';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -51,6 +52,16 @@ export const MainNavigator: React.FC = () => {
           tabBarLabel: 'Gallery',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="images" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          tabBarLabel: 'Settings',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" size={size} color={color} />
           ),
         }}
       />
